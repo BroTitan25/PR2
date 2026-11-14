@@ -20,3 +20,13 @@
 ./run.sh --package requests
 ./run_tests.sh
 ```
+
+## Этап 2. Сбор данных
+
+Прямые зависимости пакета читаются из JSON-описания, которое отдаёт
+репозиторий по адресу `<repo>/<package>/json` (формат PyPI).
+Используется только стандартная библиотека Python (`urllib`, `json`).
+
+```
+./run.sh --package requests
+```

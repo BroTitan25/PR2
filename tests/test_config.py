@@ -75,15 +75,8 @@ class LoadConfigTest(unittest.TestCase):
             load_config(["-p", "requests", "-o", "no/such/dir/g.svg"])
 
 
-class CliPrototypeTest(unittest.TestCase):
-    """Stage 1 behaviour: print parameters as key-value pairs."""
-
-    def test_prints_parameters(self):
-        code, out, _ = run_cli(["-p", "requests", "-d", "2"])
-        self.assertEqual(code, 0)
-        self.assertIn("package: requests", out)
-        self.assertIn("max_depth: 2", out)
-        self.assertIn("test_mode: False", out)
+class CliErrorTest(unittest.TestCase):
+    """Invalid options are reported without a traceback."""
 
     def test_error_is_reported(self):
         code, out, err = run_cli(["-p", "requests", "-d", "-5"])
