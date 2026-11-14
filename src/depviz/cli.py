@@ -1,16 +1,22 @@
 """Entry point of the command-line tool."""
 
+import os
 import sys
 from typing import List, Optional
 
 from depviz.config import Config, load_config
+from depviz.d2 import to_d2
 from depviz.errors import DepvizError
+from depviz.files import write_text
 from depviz.graph import Graph, build_graph, find_cycles
 from depviz.report import format_cycles, format_graph
 from depviz.sources import forward_neighbors, reverse_neighbors, root_name
+from depviz.svg import write_svg
+from depviz.tree import render_tree
 
 EXIT_OK = 0
 EXIT_ERROR = 1
+D2_SUFFIX = ".d2"
 
 
 def collect_graph(config: Config) -> Graph:
@@ -34,11 +40,27 @@ def print_report(config: Config, graph: Graph) -> None:
         print("Cyclic dependencies:")
         for line in format_cycles(cycles):
             print(f"  {line}")
+    if config.ascii_tree:
+        print("Dependency tree:")
+        print("\n".join(render_tree(graph, root)))
+
+
+def export_graph(config: Config, graph: Graph) -> None:
+    """Save the graph as D2 text and as an SVG image."""
+    root = root_name(config)
+    d2_text = to_d2(graph)
+    d2_path = os.path.splitext(config.output)[0] + D2_SUFFIX
+    write_text(d2_path, d2_text)
+    renderer = write_svg(graph, root, d2_text, config.output)
+    print(f"D2 source saved to {d2_path}")
+    print(f"SVG image saved to {config.output} (renderer: {renderer})")
 
 
 def run(config: Config) -> None:
-    """Analyze the package and print the report."""
-    print_report(config, collect_graph(config))
+    """Analyze the package, print the report and save the image."""
+    graph = collect_graph(config)
+    print_report(config, graph)
+    export_graph(config, graph)
 
 
 def main(argv: Optional[List[str]] = None) -> int:
