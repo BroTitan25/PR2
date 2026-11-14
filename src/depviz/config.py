@@ -3,7 +3,7 @@
 import argparse
 import os
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from urllib.parse import urlparse
 
 from depviz.errors import DepvizError
@@ -28,6 +28,8 @@ class Config:
     output: str
     ascii_tree: bool
     max_depth: int
+    reverse: bool = False
+    candidates: Tuple[str, ...] = ()
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -59,7 +61,21 @@ def build_parser() -> argparse.ArgumentParser:
         "-d", "--max-depth", type=int, default=DEFAULT_DEPTH,
         help="maximum depth of the dependency analysis",
     )
+    parser.add_argument(
+        "-R", "--reverse", action="store_true",
+        help="print reverse dependencies (packages that depend on it)",
+    )
+    parser.add_argument(
+        "-c", "--candidates", default="",
+        help="comma-separated pip packages to scan for reverse dependencies",
+    )
     return parser
+
+
+def split_candidates(text: str) -> Tuple[str, ...]:
+    """Split the comma-separated list of candidate packages."""
+    parts = (part.strip() for part in text.split(","))
+    return tuple(part for part in parts if part)
 
 
 def validate_package(name: str, test_mode: bool) -> None:
@@ -79,6 +95,12 @@ def validate_repo(repo: str, test_mode: bool) -> None:
     parsed = urlparse(repo)
     if parsed.scheme not in URL_SCHEMES or not parsed.netloc:
         raise DepvizError(f"invalid repository URL: {repo!r}")
+
+
+def validate_candidates(candidates: Tuple[str, ...], test_mode: bool) -> None:
+    """Check names of the packages scanned for reverse dependencies."""
+    for name in candidates:
+        validate_package(name, test_mode)
 
 
 def validate_output(path: str) -> None:
@@ -104,6 +126,7 @@ def validate(config: Config) -> None:
     validate_repo(config.repo, config.test_mode)
     validate_output(config.output)
     validate_depth(config.max_depth)
+    validate_candidates(config.candidates, config.test_mode)
 
 
 def load_config(argv: Optional[List[str]] = None) -> Config:
@@ -116,6 +139,8 @@ def load_config(argv: Optional[List[str]] = None) -> Config:
         output=args.output,
         ascii_tree=args.ascii_tree,
         max_depth=args.max_depth,
+        reverse=args.reverse,
+        candidates=split_candidates(args.candidates),
     )
     validate(config)
     return config

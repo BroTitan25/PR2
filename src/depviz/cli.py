@@ -7,7 +7,7 @@ from depviz.config import Config, load_config
 from depviz.errors import DepvizError
 from depviz.graph import Graph, build_graph, find_cycles
 from depviz.report import format_cycles, format_graph
-from depviz.sources import forward_neighbors, root_name
+from depviz.sources import forward_neighbors, reverse_neighbors, root_name
 
 EXIT_OK = 0
 EXIT_ERROR = 1
@@ -15,14 +15,18 @@ EXIT_ERROR = 1
 
 def collect_graph(config: Config) -> Graph:
     """Build the dependency graph of the requested package."""
-    neighbors = forward_neighbors(config)
+    if config.reverse:
+        neighbors = reverse_neighbors(config)
+    else:
+        neighbors = forward_neighbors(config)
     return build_graph(root_name(config), neighbors, config.max_depth)
 
 
 def print_report(config: Config, graph: Graph) -> None:
     """Print the graph and the dependency cycles found in it."""
     root = root_name(config)
-    print(f"Dependencies of {root} (max depth {config.max_depth}):")
+    title = "Reverse dependencies" if config.reverse else "Dependencies"
+    print(f"{title} of {root} (max depth {config.max_depth}):")
     for line in format_graph(graph):
         print(line)
     cycles = find_cycles(graph, root)

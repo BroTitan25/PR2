@@ -64,3 +64,19 @@ def find_cycles(graph: Graph, root: str) -> List[List[str]]:
             path.append(child)
             stack.append((child, iter(graph.get(child, []))))
     return cycles
+
+
+def invert_graph(graph: Graph) -> Graph:
+    """Reverse every edge: map a package to packages that depend on it."""
+    inverted: Graph = {node: [] for node in graph}
+    for node, dependencies in graph.items():
+        for dependency in dependencies:
+            inverted.setdefault(dependency, []).append(node)
+    return inverted
+
+
+def merge_graphs(target: Graph, source: Graph) -> None:
+    """Add all nodes of ``source`` to ``target`` keeping known edges."""
+    for node, dependencies in source.items():
+        if dependencies or node not in target:
+            target[node] = dependencies
