@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import tempfile
 from collections import deque
-from typing import Dict, List, NamedTuple, Tuple
+from typing import Dict, List, NamedTuple, Optional, Tuple
 
 from depviz.errors import DepvizError
 from depviz.files import write_text
@@ -63,21 +63,24 @@ def node_width(name: str) -> int:
     return max(MIN_WIDTH, CHAR_WIDTH * len(name) + TEXT_PADDING)
 
 
-def row_width(row: List[str]) -> int:
+def row_width(row: List[str], labels: Dict[str, str]) -> int:
     """Total width of a row of boxes including gaps."""
-    return sum(node_width(name) for name in row) + H_GAP * (len(row) - 1)
+    widths = (node_width(labels.get(name, name)) for name in row)
+    return sum(widths) + H_GAP * (len(row) - 1)
 
 
-def place_nodes(layers: List[List[str]]) -> Tuple[Dict[str, Box], int, int]:
+def place_nodes(
+    layers: List[List[str]], labels: Dict[str, str]
+) -> Tuple[Dict[str, Box], int, int]:
     """Compute boxes of all nodes and the size of the canvas."""
-    widths = [row_width(row) for row in layers]
+    widths = [row_width(row, labels) for row in layers]
     canvas_width = max(widths) + 2 * MARGIN
     boxes: Dict[str, Box] = {}
     for index, row in enumerate(layers):
         x = (canvas_width - widths[index]) / 2
         y = MARGIN + index * (NODE_HEIGHT + V_GAP)
         for name in row:
-            width = node_width(name)
+            width = node_width(labels.get(name, name))
             boxes[name] = Box(x, y, width, index)
             x += width + H_GAP
     rows = len(layers)
@@ -102,7 +105,7 @@ def edge_path(source: Box, target: Box) -> str:
     )
 
 
-def node_svg(name: str, box: Box, is_root: bool) -> str:
+def node_svg(label: str, box: Box, is_root: bool) -> str:
     """SVG elements of one node: a rectangle and its label."""
     fill = ROOT_FILL if is_root else NODE_FILL
     center_x = box.x + box.width / 2
@@ -113,13 +116,20 @@ def node_svg(name: str, box: Box, is_root: bool) -> str:
         f'<text x="{center_x:.1f}" y="{center_y:.1f}" '
         f'text-anchor="middle" dominant-baseline="middle" '
         f'font-family="monospace" font-size="{FONT_SIZE}">'
-        f"{html.escape(name)}</text>"
+        f"{html.escape(label)}</text>"
     )
 
 
-def render_svg(graph: Graph, root: str) -> str:
-    """Draw the graph with the built-in layered layout."""
-    boxes, width, height = place_nodes(compute_layers(graph, root))
+def render_svg(
+    graph: Graph, root: str, labels: Optional[Dict[str, str]] = None
+) -> str:
+    """Draw the graph with the built-in layered layout.
+
+    ``labels`` maps a node to the text written in its box.
+    """
+    labels = labels or {}
+    layers = compute_layers(graph, root)
+    boxes, width, height = place_nodes(layers, labels)
     parts = [
         '<svg xmlns="http://www.w3.org/2000/svg" '
         f'width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
@@ -134,7 +144,10 @@ def render_svg(graph: Graph, root: str) -> str:
                 f'<path d="{path}" fill="none" stroke="#555" '
                 'marker-end="url(#arrow)"/>'
             )
-    parts.extend(node_svg(n, box, n == root) for n, box in boxes.items())
+    parts.extend(
+        node_svg(labels.get(n, n), box, n == root)
+        for n, box in boxes.items()
+    )
     parts.append("</svg>")
     return "\n".join(parts) + "\n"
 
@@ -156,9 +169,12 @@ def render_with_d2(d2_text: str, svg_path: str) -> bool:
     return True
 
 
-def write_svg(graph: Graph, root: str, d2_text: str, path: str) -> str:
+def write_svg(
+    graph: Graph, root: str, d2_text: str, path: str,
+    labels: Optional[Dict[str, str]] = None,
+) -> str:
     """Save the SVG image and return the name of the renderer used."""
     if render_with_d2(d2_text, path):
         return RENDERER_D2
-    write_text(path, render_svg(graph, root))
+    write_text(path, render_svg(graph, root, labels))
     return RENDERER_BUILTIN

@@ -4,7 +4,7 @@ import json
 import re
 import urllib.error
 import urllib.request
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from depviz.errors import DepvizError
 from depviz.names import canonical_name
@@ -57,12 +57,26 @@ def parse_requirement(line: str) -> Optional[str]:
     return canonical_name(match.group(1))
 
 
-def direct_dependencies(repo: str, package: str) -> List[str]:
-    """Return names of direct dependencies of the latest package version."""
+def fetch_info(repo: str, package: str) -> Dict[str, Any]:
+    """Download the ``info`` section of the description of a package."""
     data = fetch_json(metadata_url(repo, package))
     info = data.get("info") if isinstance(data, dict) else None
     if not isinstance(info, dict):
         raise DepvizError(f"unexpected response for package {package!r}")
+    return info
+
+
+def package_version(repo: str, package: str) -> str:
+    """Return the latest version of a package, the one that is analyzed."""
+    version = fetch_info(repo, package).get("version")
+    if not isinstance(version, str) or not version:
+        raise DepvizError(f"version of package {package!r} is unknown")
+    return version
+
+
+def direct_dependencies(repo: str, package: str) -> List[str]:
+    """Return names of direct dependencies of the latest package version."""
+    info = fetch_info(repo, package)
     own_name = canonical_name(package)
     names: List[str] = []
     for line in info.get("requires_dist") or []:

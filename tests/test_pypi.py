@@ -99,6 +99,17 @@ class DirectDependenciesTest(unittest.TestCase):
             with self.assertRaises(DepvizError):
                 pypi.direct_dependencies(REPO, "six")
 
+    def test_package_version(self):
+        data = {"info": {"version": "2.34.2"}}
+        with mock.patch(URLOPEN, return_value=reply_with(data)):
+            self.assertEqual(pypi.package_version(REPO, "requests"), "2.34.2")
+
+    def test_missing_version(self):
+        data = {"info": {"requires_dist": []}}
+        with mock.patch(URLOPEN, return_value=reply_with(data)):
+            with self.assertRaisesRegex(DepvizError, "version"):
+                pypi.package_version(REPO, "requests")
+
     def test_url_building(self):
         self.assertEqual(
             pypi.metadata_url(REPO + "/", "requests"),

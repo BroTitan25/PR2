@@ -59,6 +59,11 @@ class D2Test(unittest.TestCase):
     def test_isolated_node_is_declared(self):
         self.assertIn("\nA\n", to_d2({"A": []}))
 
+    def test_label_with_version(self):
+        text = to_d2({"A": ["B"], "B": []}, {"A": "A 1.2.3"})
+        self.assertIn('\nA: "A 1.2.3"\n', text)
+        self.assertIn("A -> B\n", text)
+
     def test_special_names_are_quoted(self):
         self.assertEqual(d2_id("zope.interface"), '"zope.interface"')
         self.assertEqual(d2_id("charset-normalizer"), "charset-normalizer")
@@ -84,6 +89,12 @@ class SvgTest(unittest.TestCase):
         document = svg.render_svg({"A<B": []}, "A<B")
         self.assertIn("A&lt;B", document)
         xml_tree.fromstring(document)
+
+    def test_version_label_is_drawn_in_root_box(self):
+        labels = {"A": "A 1.2.3"}
+        document = svg.render_svg(DIAMOND, "A", labels)
+        xml_tree.fromstring(document)
+        self.assertIn(">A 1.2.3</text>", document)
 
     def test_layers(self):
         layers = svg.compute_layers(DIAMOND, "A")

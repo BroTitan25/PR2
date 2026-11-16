@@ -8,6 +8,7 @@ from depviz.graph import build_graph, invert_graph, merge_graphs
 from helpers import run_cli, write_file
 
 DEPS = "depviz.sources.direct_dependencies"
+VERSION = "depviz.cli.package_version"
 REPO = "A: B C\nB: D\nC: D\nD:\nE: D\n"
 
 
@@ -73,9 +74,10 @@ class ReverseCliTest(unittest.TestCase):
         table = {"requests": ["idna"], "flask": ["click"], "idna": []}
         table["click"] = []
         with mock.patch(DEPS, side_effect=lambda r, n: table[n]):
-            code, out, _ = run_cli(
-                ["-p", "idna", "-R", "-c", "requests, flask", "-d", "2"]
-            )
+            with mock.patch(VERSION, return_value="3.20"):
+                code, out, _ = run_cli(
+                    ["-p", "idna", "-R", "-c", "requests, flask", "-d", "2"]
+                )
         self.assertEqual(code, 0)
         self.assertIn("idna -> requests\n", out)
         self.assertNotIn("flask", out)

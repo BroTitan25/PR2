@@ -2,13 +2,14 @@
 
 import os
 import sys
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from depviz.config import Config, load_config
 from depviz.d2 import to_d2
 from depviz.errors import DepvizError
 from depviz.files import write_text
 from depviz.graph import Graph, build_graph, find_cycles
+from depviz.pypi import package_version
 from depviz.report import format_cycles, format_graph
 from depviz.sources import forward_neighbors, reverse_neighbors, root_name
 from depviz.svg import write_svg
@@ -28,6 +29,18 @@ def collect_graph(config: Config) -> Graph:
     return build_graph(root_name(config), neighbors, config.max_depth)
 
 
+def root_labels(config: Config) -> Dict[str, str]:
+    """Label of the analyzed package: its name and analyzed version."""
+    if config.test_mode:
+        return {}
+    root = root_name(config)
+    try:
+        version = package_version(config.repo, root)
+    except DepvizError:
+        return {}
+    return {root: f"{root} {version}"}
+
+
 def print_report(config: Config, graph: Graph) -> None:
     """Print the graph and the dependency cycles found in it."""
     root = root_name(config)
@@ -45,13 +58,17 @@ def print_report(config: Config, graph: Graph) -> None:
         print("\n".join(render_tree(graph, root)))
 
 
-def export_graph(config: Config, graph: Graph) -> None:
+def export_graph(
+    config: Config, graph: Graph, labels: Dict[str, str]
+) -> None:
     """Save the graph as D2 text and as an SVG image."""
     root = root_name(config)
-    d2_text = to_d2(graph)
+    d2_text = to_d2(graph, labels)
     d2_path = os.path.splitext(config.output)[0] + D2_SUFFIX
     write_text(d2_path, d2_text)
-    renderer = write_svg(graph, root, d2_text, config.output)
+    renderer = write_svg(
+        graph, root, d2_text, config.output, labels
+    )
     print(f"D2 source saved to {d2_path}")
     print(f"SVG image saved to {config.output} (renderer: {renderer})")
 
@@ -60,7 +77,7 @@ def run(config: Config) -> None:
     """Analyze the package, print the report and save the image."""
     graph = collect_graph(config)
     print_report(config, graph)
-    export_graph(config, graph)
+    export_graph(config, graph, root_labels(config))
 
 
 def main(argv: Optional[List[str]] = None) -> int:

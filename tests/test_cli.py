@@ -8,6 +8,7 @@ from depviz.errors import DepvizError
 from helpers import run_cli, write_file
 
 DEPS = "depviz.sources.direct_dependencies"
+VERSION = "depviz.cli.package_version"
 CYCLE = "A: B\nB: C\nC: A D\nD:\n"
 CHAIN = "A: B\nB: C\nC: D\nD:\n"
 
@@ -54,14 +55,17 @@ class PypiModeTest(unittest.TestCase):
     def test_transitive_dependencies(self):
         table = {"requests": ["idna", "urllib3"], "idna": [], "urllib3": []}
         with mock.patch(DEPS, side_effect=lambda repo, name: table[name]):
-            code, out, _ = run_cli(["-p", "Requests", "-d", "3"])
+            with mock.patch(VERSION, return_value="2.34.2"):
+                code, out, _ = run_cli(["-p", "Requests", "-d", "3"])
         self.assertEqual(code, 0)
         self.assertIn("requests -> idna, urllib3\n", out)
+        self.assertIn("Dependencies of requests (max depth", out)
 
     def test_each_package_is_requested_once(self):
         table = {"a": ["b", "c"], "b": ["c"], "c": []}
         with mock.patch(DEPS, side_effect=lambda r, n: table[n]) as fake:
-            run_cli(["-p", "a", "-d", "5"])
+            with mock.patch(VERSION, return_value="1.0"):
+                run_cli(["-p", "a", "-d", "5"])
         self.assertEqual(fake.call_count, len(table))
 
     def test_repository_error(self):
@@ -69,6 +73,15 @@ class PypiModeTest(unittest.TestCase):
             code, _, err = run_cli(["-p", "six"])
         self.assertEqual(code, 1)
         self.assertIn("error: boom", err)
+
+    def test_unknown_version_is_not_fatal(self):
+        table = {"six": []}
+        broken = DepvizError("no version")
+        with mock.patch(DEPS, side_effect=lambda r, n: table[n]):
+            with mock.patch(VERSION, side_effect=broken):
+                code, out, _ = run_cli(["-p", "six"])
+        self.assertEqual(code, 0)
+        self.assertIn("Dependencies of six (max depth", out)
 
 
 if __name__ == "__main__":
