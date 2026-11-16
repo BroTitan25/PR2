@@ -1,16 +1,23 @@
 """Tests for the command-line behaviour (stage 3)."""
 
+import os
 import tempfile
 import unittest
 from unittest import mock
 
 from depviz.errors import DepvizError
+from depviz.pypi import Requirement
 from helpers import run_cli, write_file
 
-DEPS = "depviz.sources.direct_dependencies"
+DEPS = "depviz.sources.direct_requirements"
 VERSION = "depviz.cli.package_version"
 CYCLE = "A: B\nB: C\nC: A D\nD:\n"
 CHAIN = "A: B\nB: C\nC: D\nD:\n"
+
+
+def reqs(names):
+    """Make requirements without version specifiers from names."""
+    return [Requirement(name, "") for name in names]
 
 
 def run_on_repo(text, *options):
@@ -54,7 +61,7 @@ class PypiModeTest(unittest.TestCase):
 
     def test_transitive_dependencies(self):
         table = {"requests": ["idna", "urllib3"], "idna": [], "urllib3": []}
-        with mock.patch(DEPS, side_effect=lambda repo, name: table[name]):
+        with mock.patch(DEPS, side_effect=lambda repo, name: reqs(table[name])):
             with mock.patch(VERSION, return_value="2.34.2"):
                 code, out, _ = run_cli(["-p", "Requests", "-d", "3"])
         self.assertEqual(code, 0)
@@ -63,10 +70,31 @@ class PypiModeTest(unittest.TestCase):
 
     def test_each_package_is_requested_once(self):
         table = {"a": ["b", "c"], "b": ["c"], "c": []}
-        with mock.patch(DEPS, side_effect=lambda r, n: table[n]) as fake:
+        with mock.patch(DEPS, side_effect=lambda r, n: reqs(table[n])) as fake:
             with mock.patch(VERSION, return_value="1.0"):
                 run_cli(["-p", "a", "-d", "5"])
         self.assertEqual(fake.call_count, len(table))
+
+    def test_image_shows_version_requirements(self):
+        table = {
+            "flask": [Requirement("click", ">=8.1.3")],
+            "click": [Requirement("colorama", "")],
+            "colorama": [],
+        }
+        with tempfile.TemporaryDirectory() as folder:
+            image = os.path.join(folder, "flask.svg")
+            with mock.patch(DEPS, side_effect=lambda r, n: table[n]):
+                with mock.patch(VERSION, return_value="3.1.3"):
+                    run_cli(["-p", "flask", "-d", "5", "-o", image])
+            with open(os.path.join(folder, "flask.d2"), encoding="utf-8") as f:
+                d2_text = f.read()
+            with open(image, encoding="utf-8") as handle:
+                svg_text = handle.read()
+        self.assertIn('flask: "flask 3.1.3"', d2_text)
+        self.assertIn('click: "click >=8.1.3"', d2_text)
+        self.assertIn(">click &gt;=8.1.3</text>", svg_text)
+        self.assertIn(">flask 3.1.3</text>", svg_text)
+        self.assertIn(">colorama</text>", svg_text)
 
     def test_repository_error(self):
         with mock.patch(DEPS, side_effect=DepvizError("boom")):
@@ -75,9 +103,8 @@ class PypiModeTest(unittest.TestCase):
         self.assertIn("error: boom", err)
 
     def test_unknown_version_is_not_fatal(self):
-        table = {"six": []}
         broken = DepvizError("no version")
-        with mock.patch(DEPS, side_effect=lambda r, n: table[n]):
+        with mock.patch(DEPS, return_value=[]):
             with mock.patch(VERSION, side_effect=broken):
                 code, out, _ = run_cli(["-p", "six"])
         self.assertEqual(code, 0)

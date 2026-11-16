@@ -4,12 +4,18 @@ import tempfile
 import unittest
 from unittest import mock
 
+from depviz.pypi import Requirement
 from depviz.graph import build_graph, invert_graph, merge_graphs
 from helpers import run_cli, write_file
 
-DEPS = "depviz.sources.direct_dependencies"
+DEPS = "depviz.sources.direct_requirements"
 VERSION = "depviz.cli.package_version"
 REPO = "A: B C\nB: D\nC: D\nD:\nE: D\n"
+
+
+def reqs(names):
+    """Make requirements without version specifiers from names."""
+    return [Requirement(name, "") for name in names]
 
 
 def run_reverse(*options):
@@ -73,7 +79,7 @@ class ReverseCliTest(unittest.TestCase):
     def test_pip_mode_with_candidates(self):
         table = {"requests": ["idna"], "flask": ["click"], "idna": []}
         table["click"] = []
-        with mock.patch(DEPS, side_effect=lambda r, n: table[n]):
+        with mock.patch(DEPS, side_effect=lambda r, n: reqs(table[n])):
             with mock.patch(VERSION, return_value="3.20"):
                 code, out, _ = run_cli(
                     ["-p", "idna", "-R", "-c", "requests, flask", "-d", "2"]

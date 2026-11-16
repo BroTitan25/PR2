@@ -2,7 +2,7 @@
 
 import os
 import sys
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from depviz.config import Config, load_config
 from depviz.d2 import to_d2
@@ -20,25 +20,36 @@ EXIT_ERROR = 1
 D2_SUFFIX = ".d2"
 
 
-def collect_graph(config: Config) -> Graph:
-    """Build the dependency graph of the requested package."""
+def collect_graph(config: Config) -> Tuple[Graph, Dict[str, str]]:
+    """Build the graph and collect version specifiers of its packages."""
+    requirements: Dict[str, str] = {}
     if config.reverse:
-        neighbors = reverse_neighbors(config)
+        neighbors = reverse_neighbors(config, requirements)
     else:
-        neighbors = forward_neighbors(config)
-    return build_graph(root_name(config), neighbors, config.max_depth)
+        neighbors = forward_neighbors(config, requirements)
+    graph = build_graph(root_name(config), neighbors, config.max_depth)
+    return graph, requirements
 
 
-def root_labels(config: Config) -> Dict[str, str]:
-    """Label of the analyzed package: its name and analyzed version."""
+def build_labels(
+    config: Config, requirements: Dict[str, str]
+) -> Dict[str, str]:
+    """Image labels: required versions, and the analyzed version of the root.
+
+    Every package gets its version requirement (for example ``>=2.5``);
+    the analyzed package gets the version that was actually analyzed.
+    """
     if config.test_mode:
         return {}
+    labels = {
+        name: f"{name} {spec}" for name, spec in requirements.items() if spec
+    }
     root = root_name(config)
     try:
-        version = package_version(config.repo, root)
+        labels[root] = f"{root} {package_version(config.repo, root)}"
     except DepvizError:
-        return {}
-    return {root: f"{root} {version}"}
+        pass
+    return labels
 
 
 def print_report(config: Config, graph: Graph) -> None:
@@ -75,9 +86,9 @@ def export_graph(
 
 def run(config: Config) -> None:
     """Analyze the package, print the report and save the image."""
-    graph = collect_graph(config)
+    graph, requirements = collect_graph(config)
     print_report(config, graph)
-    export_graph(config, graph, root_labels(config))
+    export_graph(config, graph, build_labels(config, requirements))
 
 
 def main(argv: Optional[List[str]] = None) -> int:

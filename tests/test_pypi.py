@@ -35,12 +35,26 @@ class ParseRequirementTest(unittest.TestCase):
     """Extraction of package names from Requires-Dist lines."""
 
     def test_plain_name(self):
-        self.assertEqual(pypi.parse_requirement("idna"), "idna")
+        self.assertEqual(
+            pypi.parse_requirement("idna"), pypi.Requirement("idna", "")
+        )
 
     def test_version_and_extras(self):
         self.assertEqual(
-            pypi.parse_requirement("Charset_Normalizer[x] (>=2,<4)"),
-            "charset-normalizer",
+            pypi.parse_requirement("Charset_Normalizer[x] (>=2, <4)"),
+            pypi.Requirement("charset-normalizer", ">=2,<4"),
+        )
+
+    def test_specifier_without_parentheses(self):
+        self.assertEqual(
+            pypi.parse_requirement("idna<4,>=2.5"),
+            pypi.Requirement("idna", "<4,>=2.5"),
+        )
+
+    def test_url_reference_has_no_specifier(self):
+        line = "tool @ https://example.test/tool.zip"
+        self.assertEqual(
+            pypi.parse_requirement(line), pypi.Requirement("tool", "")
         )
 
     def test_extra_marker_is_skipped(self):
@@ -49,7 +63,9 @@ class ParseRequirementTest(unittest.TestCase):
 
     def test_other_marker_is_kept(self):
         line = "colorama; platform_system == 'Windows'"
-        self.assertEqual(pypi.parse_requirement(line), "colorama")
+        self.assertEqual(
+            pypi.parse_requirement(line), pypi.Requirement("colorama", "")
+        )
 
     def test_garbage_line(self):
         self.assertIsNone(pypi.parse_requirement("!!!"))
@@ -65,6 +81,16 @@ class DirectDependenciesTest(unittest.TestCase):
             names,
             ["charset-normalizer", "idna", "urllib3", "certifi"],
         )
+
+    def test_specifiers_of_repeated_dependency_are_merged(self):
+        with mock.patch(URLOPEN, return_value=reply_with(REQUESTS_INFO)):
+            found = pypi.direct_requirements(REPO, "requests")
+        self.assertIn(pypi.Requirement("idna", "<4,>=2.5"), found)
+        self.assertIn(pypi.Requirement("certifi", ">=2017.4.17"), found)
+
+    def test_merge_specifiers(self):
+        self.assertEqual(pypi.merge_specifiers("", ">=1"), ">=1")
+        self.assertEqual(pypi.merge_specifiers(">=1", "<3,>=1"), ">=1,<3")
 
     def test_package_without_dependencies(self):
         data = {"info": {"requires_dist": None}}

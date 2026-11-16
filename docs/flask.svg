@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1548" height="296" viewBox="0 0 1548 296">
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#555"/></marker></defs>
+<path d="M 774.0 60.0 L 103.5 130.0" fill="none" stroke="#555" marker-end="url(#arrow)"/>
+<path d="M 774.0 60.0 L 283.5 130.0" fill="none" stroke="#555" marker-end="url(#arrow)"/>
+<path d="M 774.0 60.0 L 513.0 130.0" fill="none" stroke="#555" marker-end="url(#arrow)"/>
+<path d="M 774.0 60.0 L 774.0 130.0" fill="none" stroke="#555" marker-end="url(#arrow)"/>
+<path d="M 774.0 60.0 L 981.0 130.0" fill="none" stroke="#555" marker-end="url(#arrow)"/>
+<path d="M 774.0 60.0 L 1206.0 130.0" fill="none" stroke="#555" marker-end="url(#arrow)"/>
+<path d="M 774.0 60.0 L 1440.0 130.0" fill="none" stroke="#555" marker-end="url(#arrow)"/>
+<path d="M 513.0 166.0 L 661.5 236.0" fill="none" stroke="#555" marker-end="url(#arrow)"/>
+<path d="M 513.0 166.0 L 850.5 236.0" fill="none" stroke="#555" marker-end="url(#arrow)"/>
+<path d="M 1056.0 140.0 C 1096.0 140.0 1366.0 156.0 1326.0 156.0" fill="none" stroke="#555" marker-end="url(#arrow)"/>
+<path d="M 1524.0 140.0 C 1564.0 140.0 1366.0 156.0 1326.0 156.0" fill="none" stroke="#555" marker-end="url(#arrow)"/>
+<rect x="712.5" y="24.0" width="123" height="36" rx="6" fill="#cfe8ff" stroke="#333"/>
+<text x="774.0" y="42.0" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="14">flask 3.1.3</text>
+<rect x="24.0" y="130.0" width="159" height="36" rx="6" fill="#f4f4f4" stroke="#333"/>
+<text x="103.5" y="148.0" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="14">blinker &gt;=1.9.0</text>
+<rect x="213.0" y="130.0" width="141" height="36" rx="6" fill="#f4f4f4" stroke="#333"/>
+<text x="283.5" y="148.0" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="14">click &gt;=8.1.3</text>
+<rect x="384.0" y="130.0" width="258" height="36" rx="6" fill="#f4f4f4" stroke="#333"/>
+<text x="513.0" y="148.0" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="14">importlib-metadata &gt;=3.6.0</text>
+<rect x="672.0" y="130.0" width="204" height="36" rx="6" fill="#f4f4f4" stroke="#333"/>
+<text x="774.0" y="148.0" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="14">itsdangerous &gt;=2.2.0</text>
+<rect x="906.0" y="130.0" width="150" height="36" rx="6" fill="#f4f4f4" stroke="#333"/>
+<text x="981.0" y="148.0" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="14">jinja2 &gt;=3.1.2</text>
+<rect x="1086.0" y="130.0" width="240" height="36" rx="6" fill="#f4f4f4" stroke="#333"/>
+<text x="1206.0" y="148.0" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="14">markupsafe &gt;=2.1.1,&gt;=2.0</text>
+<rect x="1356.0" y="130.0" width="168" height="36" rx="6" fill="#f4f4f4" stroke="#333"/>
+<text x="1440.0" y="148.0" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="14">werkzeug &gt;=3.1.0</text>
+<rect x="600.0" y="236.0" width="123" height="36" rx="6" fill="#f4f4f4" stroke="#333"/>
+<text x="661.5" y="254.0" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="14">zipp &gt;=3.20</text>
+<rect x="753.0" y="236.0" width="195" height="36" rx="6" fill="#f4f4f4" stroke="#333"/>
+<text x="850.5" y="254.0" text-anchor="middle" dominant-baseline="middle" font-family="monospace" font-size="14">lazy-importer &gt;=0.1</text>
+</svg>
