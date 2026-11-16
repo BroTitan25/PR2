@@ -8,3 +8,5 @@ dist/
 .vscode/
 graph.svg
 graph.d2
+/*.svg
+/*.d2
